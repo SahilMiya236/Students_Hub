@@ -1,0 +1,587 @@
+#=== STUDENT RESULT AND HABIT TRACKER (GUI) ===
+# In this program made by Sahil, Grade 9
+# Upgraded with modern graphics and UI
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+import random
+import webbrowser
+import os
+
+# ── Colour palette ──────────────────────────────────────────────
+BG        = "#0F172A"   # deep navy
+CARD      = "#1E293B"   # card background
+BORDER    = "#334155"   # card border / divider
+ACCENT    = "#6366F1"   # indigo accent
+ACCENT2   = "#8B5CF6"   # purple accent
+SUCCESS   = "#10B981"   # green
+DANGER    = "#EF4444"   # red
+WARNING   = "#F59E0B"   # amber
+TEXT      = "#F1F5F9"   # near-white
+SUBTEXT   = "#94A3B8"   # muted
+BTN_HVR   = "#4F46E5"   # button hover
+BTN_BACK  = "#475569"   # back-button base
+BTN_BACK_HVR = "#64748B"
+
+FONT_TITLE    = ("Segoe UI", 20, "bold")
+FONT_SUBTITLE = ("Segoe UI", 12)
+FONT_BODY     = ("Segoe UI", 11)
+FONT_SMALL    = ("Segoe UI", 9)
+FONT_BTN      = ("Segoe UI", 11, "bold")
+FONT_INPUT    = ("Segoe UI", 11)
+
+# Global student data
+student_info = {}
+
+
+# ── Reusable widget helpers ──────────────────────────────────────
+
+def make_card(parent, **kwargs):
+    """Raised card panel."""
+    f = tk.Frame(parent, bg=CARD, bd=0, highlightbackground=BORDER,
+                 highlightthickness=1, **kwargs)
+    return f
+
+
+def make_btn(parent, text, command, color=ACCENT, hover=BTN_HVR,
+             width=22, pady=10):
+    """Flat button with hover effect."""
+    btn = tk.Button(parent, text=text, command=command,
+                    font=FONT_BTN, bg=color, fg=TEXT,
+                    activebackground=hover, activeforeground=TEXT,
+                    bd=0, padx=18, pady=pady, width=width,
+                    cursor="hand2", relief="flat")
+    btn.bind("<Enter>", lambda e: btn.config(bg=hover))
+    btn.bind("<Leave>", lambda e: btn.config(bg=color))
+    return btn
+
+
+def make_entry(parent):
+    """Styled entry widget."""
+    e = tk.Entry(parent, font=FONT_INPUT, bg=BORDER, fg=TEXT,
+                 insertbackground=TEXT, relief="flat",
+                 bd=0, highlightbackground=ACCENT,
+                 highlightthickness=1)
+    return e
+
+
+def make_label(parent, text, font=FONT_BODY, fg=TEXT, **kw):
+    return tk.Label(parent, text=text, font=font, bg=CARD, fg=fg, **kw)
+
+
+def make_title_bar(parent, title, icon=""):
+    """Gradient-style coloured header bar inside a card."""
+    bar = tk.Frame(parent, bg=ACCENT, height=4)
+    bar.pack(fill="x")
+    lbl = tk.Label(parent, text=f"{icon}  {title}" if icon else title,
+                   font=FONT_TITLE, bg=CARD, fg=TEXT, pady=14)
+    lbl.pack()
+    sep = tk.Frame(parent, bg=BORDER, height=1)
+    sep.pack(fill="x", padx=10)
+
+
+# ── Main application ─────────────────────────────────────────────
+
+class StudentTrackerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Student Hub — by Sahil")
+        self.root.geometry("680x580")
+        self.root.minsize(600, 520)
+        self.root.configure(bg=BG)
+        self.root.resizable(True, True)
+
+        # ttk style (used for scrollbar only)
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Vertical.TScrollbar",
+                        gripcount=0, background=BORDER,
+                        darkcolor=BG, lightcolor=BG,
+                        troughcolor=BG, bordercolor=BG,
+                        arrowcolor=SUBTEXT)
+
+        self.show_welcome_screen()
+
+    # ── Utility ─────────────────────────────────────────────────
+
+    def clear_window(self):
+        for w in self.root.winfo_children():
+            w.destroy()
+
+    def _base_frame(self):
+        """Dark outer frame that fills the window."""
+        f = tk.Frame(self.root, bg=BG)
+        f.pack(expand=True, fill="both", padx=24, pady=20)
+        return f
+
+    def _centered_card(self, outer, pad_x=0, pad_y=16):
+        card = make_card(outer)
+        card.pack(expand=True, fill="both", padx=pad_x, pady=pad_y)
+        return card
+
+    # ── Welcome / Details screen ─────────────────────────────────
+
+    def show_welcome_screen(self):
+        self.clear_window()
+        outer = self._base_frame()
+        card  = self._centered_card(outer)
+
+        make_title_bar(card, "STUDENT DETAILS", "🎓")
+
+        body = tk.Frame(card, bg=CARD, padx=30, pady=20)
+        body.pack(fill="both", expand=True)
+
+        subtitle = make_label(body,
+            "Welcome! Please enter your details to get started.",
+            font=FONT_SUBTITLE, fg=SUBTEXT)
+        subtitle.pack(pady=(0, 16))
+
+        fields = [
+            ("👤  Full Name",       "name"),
+            ("📚  Grade",           "grade"),
+            ("🎂  Age",             "age"),
+            ("🔢  Symbol Number",   "symbol_number"),
+        ]
+        entries = {}
+        for label_text, key in fields:
+            row = tk.Frame(body, bg=CARD)
+            row.pack(fill="x", pady=5)
+            make_label(row, label_text, fg=SUBTEXT).pack(anchor="w")
+            e = make_entry(row)
+            e.pack(fill="x", ipady=6, pady=(4, 0))
+            entries[key] = e
+
+        def submit():
+            if all(entries[k].get().strip() for k in entries):
+                for k, e in entries.items():
+                    student_info[k] = e.get().strip()
+                self.show_main_menu()
+            else:
+                messagebox.showerror("Missing Info",
+                                     "Please fill in all fields before continuing.")
+
+        btn_row = tk.Frame(body, bg=CARD)
+        btn_row.pack(pady=20)
+        make_btn(btn_row, "Continue →", submit, width=24).pack()
+
+    # ── Main Menu ────────────────────────────────────────────────
+
+    def show_main_menu(self):
+        self.clear_window()
+        outer = self._base_frame()
+        card  = self._centered_card(outer)
+
+        make_title_bar(card, "STUDENT HUB", "🏠")
+
+        body = tk.Frame(card, bg=CARD, padx=30, pady=16)
+        body.pack(fill="both", expand=True)
+
+        name = student_info.get("name", "Student")
+        make_label(body, f"Welcome back, {name}! 👋",
+                   font=("Segoe UI", 13, "bold")).pack(pady=(0, 4))
+        make_label(body, "Made for students · by Sahil, Grade 9",
+                   font=FONT_SMALL, fg=SUBTEXT).pack(pady=(0, 18))
+
+        menu_items = [
+            ("📊   Check Results",           self.show_result_checker, ACCENT,   BTN_HVR),
+            ("📅   Habit Tracker",           self.show_habit_tracker,  ACCENT2,  "#7C3AED"),
+            ("📖   Study Options & Resources",self.show_study_options,  WARNING,  "#D97706"),
+            ("🎮   Games & Entertainment",   self.show_games_menu,     SUCCESS,  "#059669"),
+            ("🚪   Exit",                    self.root.quit,           DANGER,   "#B91C1C"),
+        ]
+        for text, cmd, color, hover in menu_items:
+            make_btn(body, text, cmd, color=color, hover=hover,
+                     width=36, pady=12).pack(pady=6, fill="x")
+
+    # ── Result Checker ───────────────────────────────────────────
+
+    def show_result_checker(self):
+        self.clear_window()
+        outer = self._base_frame()
+        card  = self._centered_card(outer)
+
+        make_title_bar(card, "RESULT CHECKER", "📊")
+
+        body = tk.Frame(card, bg=CARD, padx=30, pady=14)
+        body.pack(fill="both", expand=True)
+
+        make_label(body, "Enter your marks for each subject (out of 75):",
+                   fg=SUBTEXT, font=FONT_SUBTITLE).pack(pady=(0, 10))
+
+        # Scrollable area
+        canvas = tk.Canvas(body, bg=CARD, highlightthickness=0)
+        sb = ttk.Scrollbar(body, orient="vertical", command=canvas.yview)
+        inner = tk.Frame(canvas, bg=CARD)
+        inner.bind("<Configure>",
+                   lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=inner, anchor="nw")
+        canvas.configure(yscrollcommand=sb.set)
+
+        subjects = ["Math", "Science", "English", "Nepali",
+                    "Social Studies", "Computer", "Optional Mathematics"]
+        marks_entries = {}
+        for i, sub in enumerate(subjects):
+            row = tk.Frame(inner, bg=CARD)
+            row.pack(fill="x", pady=5)
+            icon = "🔢" if sub == "Math" else "🔬" if sub == "Science" else \
+                   "🔤" if sub == "English" else "📝" if sub == "Nepali" else \
+                   "🌍" if sub == "Social Studies" else "💻" if sub == "Computer" else "➕"
+            make_label(row, f"{icon}  {sub}:", fg=SUBTEXT,
+                       font=FONT_SMALL).pack(anchor="w")
+            e = make_entry(row)
+            e.pack(fill="x", ipady=5, pady=(3, 0))
+            marks_entries[sub] = e
+
+        canvas.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+
+        def calculate():
+            try:
+                marks = {s: float(e.get()) for s, e in marks_entries.items()}
+                total = sum(marks.values())
+                pct   = (total / 525) * 100
+                passed = all(m >= 27.5 for m in marks.values())
+
+                msg  = f"📋  Results for {student_info['name']}\n"
+                msg += f"{'─'*38}\n"
+                for s, m in marks.items():
+                    status = "✅" if m >= 27.5 else "❌"
+                    msg += f"  {status}  {s}: {m}\n"
+                msg += f"{'─'*38}\n"
+                msg += f"  Total : {total} / 525\n"
+                msg += f"  Percentage : {pct:.2f}%\n\n"
+                if passed:
+                    msg += "🎉 Congratulations! You PASSED all subjects!"
+                else:
+                    msg += ("📌 You didn't pass all subjects this time.\n"
+                            "Keep going — use the Habit Tracker to improve!")
+                messagebox.showinfo("Your Results", msg)
+                self.show_main_menu()
+            except ValueError:
+                messagebox.showerror("Invalid Input",
+                                     "Please enter valid numbers for all subjects.")
+
+        btn_row = tk.Frame(card, bg=CARD, padx=30, pady=12)
+        btn_row.pack(fill="x")
+        make_btn(btn_row, "Calculate Results 📊", calculate, width=28).pack(side="left", padx=4)
+        make_btn(btn_row, "← Back", self.show_main_menu,
+                 color=BTN_BACK, hover=BTN_BACK_HVR, width=12).pack(side="left", padx=4)
+
+    # ── Habit Tracker ────────────────────────────────────────────
+
+    def show_habit_tracker(self):
+        self.clear_window()
+        outer = self._base_frame()
+        card  = self._centered_card(outer)
+
+        make_title_bar(card, "HABIT TRACKER", "📅")
+
+        body = tk.Frame(card, bg=CARD, padx=30, pady=18)
+        body.pack(fill="both", expand=True)
+
+        make_label(body,
+            f"Hey {student_info.get('name','there')}! Let's build a great habit. 💪",
+            font=FONT_SUBTITLE).pack(pady=(0, 14))
+
+        fields = [
+            ("🎯  Habit you want to build:", "habit"),
+            ("⏱️  Daily study time (minutes):", "time"),
+            ("📆  Number of days to track:", "days"),
+        ]
+        entries = {}
+        for lbl, key in fields:
+            row = tk.Frame(body, bg=CARD)
+            row.pack(fill="x", pady=6)
+            make_label(row, lbl, fg=SUBTEXT).pack(anchor="w")
+            e = make_entry(row)
+            e.pack(fill="x", ipady=6, pady=(4, 0))
+            entries[key] = e
+
+        def start():
+            if not all(entries[k].get().strip() for k in entries):
+                messagebox.showerror("Missing Info", "Please fill in all fields.")
+                return
+            try:
+                days = int(entries["days"].get())
+                self.show_tracking_progress(
+                    entries["habit"].get(), entries["time"].get(), days)
+            except ValueError:
+                messagebox.showerror("Invalid", "Days must be a whole number.")
+
+        btn_row = tk.Frame(body, bg=CARD)
+        btn_row.pack(pady=20)
+        make_btn(btn_row, "Start Tracking 🚀", start, width=24).pack(side="left", padx=4)
+        make_btn(btn_row, "← Back", self.show_main_menu,
+                 color=BTN_BACK, hover=BTN_BACK_HVR, width=10).pack(side="left", padx=4)
+
+    # ── Tracking Progress ────────────────────────────────────────
+
+    def show_tracking_progress(self, habit, time_study, days):
+        self.clear_window()
+        outer = self._base_frame()
+        card  = self._centered_card(outer)
+
+        make_title_bar(card, "TRACK YOUR PROGRESS", "🏆")
+
+        body = tk.Frame(card, bg=CARD, padx=30, pady=18)
+        body.pack(fill="both", expand=True)
+
+        # Info card
+        info_card = make_card(body)
+        info_card.pack(fill="x", pady=(0, 16))
+        info_inner = tk.Frame(info_card, bg=CARD, padx=16, pady=12)
+        info_inner.pack(fill="x")
+        for icon, label, val in [
+            ("🎯", "Habit:", habit),
+            ("⏱️", "Daily Time:", f"{time_study} minutes"),
+            ("📆", "Total Days:", str(days)),
+        ]:
+            row = tk.Frame(info_inner, bg=CARD)
+            row.pack(fill="x", pady=2)
+            make_label(row, f"{icon}  {label}", fg=SUBTEXT,
+                       font=FONT_SMALL).pack(side="left")
+            make_label(row, f"  {val}", fg=TEXT,
+                       font=("Segoe UI", 10, "bold")).pack(side="left")
+
+        progress = []
+        current  = [1]
+
+        day_var  = tk.StringVar(value=f"Day 1 of {days}")
+        day_lbl  = tk.Label(body, textvariable=day_var,
+                            font=("Segoe UI", 15, "bold"),
+                            bg=CARD, fg=ACCENT)
+        day_lbl.pack(pady=12)
+
+        # Progress bar (manual canvas bar)
+        bar_bg = tk.Canvas(body, bg=BORDER, height=14,
+                           highlightthickness=0, bd=0)
+        bar_bg.pack(fill="x", padx=4, pady=(0, 16))
+        bar_fill = bar_bg.create_rectangle(0, 0, 0, 14,
+                                           fill=ACCENT, outline="")
+
+        def update_bar():
+            w = bar_bg.winfo_width()
+            pct = len(progress) / days
+            bar_bg.coords(bar_fill, 0, 0, int(w * pct), 14)
+            bar_bg.itemconfig(bar_fill,
+                              fill=SUCCESS if pct == 1.0 else ACCENT)
+
+        body.after(100, update_bar)
+
+        def mark(done):
+            progress.append(done)
+            update_bar()
+            current[0] += 1
+            if current[0] <= days:
+                day_var.set(f"Day {current[0]} of {days}")
+                if done:
+                    messagebox.showinfo("✅ Great Job!", "Well done! Keep it up!")
+                else:
+                    messagebox.showinfo("❌ Missed", "That's okay — try again tomorrow!")
+            else:
+                total_done = sum(progress)
+                pct = (total_done / days) * 100
+                msg = (f"🏁 Habit Tracking Complete!\n\n"
+                       f"✅ Completed : {total_done} / {days} days\n"
+                       f"📈 Success Rate : {pct:.1f}%\n\n"
+                       f"{'💪 Incredible consistency!' if pct >= 80 else '📌 Keep pushing — every day counts!'}")
+                messagebox.showinfo("Summary", msg)
+                self.show_main_menu()
+
+        btn_row = tk.Frame(body, bg=CARD)
+        btn_row.pack(pady=10, fill="x")
+        make_btn(btn_row, "✅  Completed!", lambda: mark(True),
+                 color=SUCCESS, hover="#047857", width=18).pack(side="left", padx=5)
+        make_btn(btn_row, "❌  Missed",    lambda: mark(False),
+                 color=DANGER,  hover="#B91C1C", width=18).pack(side="left", padx=5)
+
+    # ── Study Options ────────────────────────────────────────────
+
+    def show_study_options(self):
+        self.clear_window()
+        outer = self._base_frame()
+        card  = self._centered_card(outer)
+
+        make_title_bar(card, "STUDY RESOURCES", "📖")
+
+        body = tk.Frame(card, bg=CARD, padx=30, pady=20)
+        body.pack(fill="both", expand=True)
+
+        make_label(body, "Explore these great learning resources:",
+                   fg=SUBTEXT, font=FONT_SUBTITLE).pack(pady=(0, 16))
+
+        resources = [
+            ("🏫", "Deerwalk Learning Center",
+             None),
+            ("▶️", "Deerwalk Dhading School (YouTube)",
+             "https://www.youtube.com/@DeerwalkDhadingSchool"),
+            ("▶️", "Deerwalk Sifal School (YouTube)",
+             "https://www.youtube.com/results?search_query=deerwalk+sifal+school"),
+            ("🤖", "Google Gemini AI",
+             "https://gemini.google.com"),
+        ]
+
+        for icon, name, url in resources:
+            r = make_card(body)
+            r.pack(fill="x", pady=5)
+            inner = tk.Frame(r, bg=CARD, padx=14, pady=10)
+            inner.pack(fill="x")
+            lbl = tk.Label(inner, text=f"{icon}  {name}",
+                           font=FONT_BODY, bg=CARD, fg=TEXT,
+                           cursor="hand2" if url else "arrow",
+                           anchor="w")
+            lbl.pack(fill="x")
+            if url:
+                lbl.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
+                lbl.bind("<Enter>", lambda e, l=lbl: l.config(fg=ACCENT))
+                lbl.bind("<Leave>", lambda e, l=lbl: l.config(fg=TEXT))
+                hint = tk.Label(inner, text="  Click to open →",
+                                font=FONT_SMALL, bg=CARD, fg=SUBTEXT, anchor="w")
+                hint.pack(fill="x")
+
+        btn_row = tk.Frame(body, bg=CARD)
+        btn_row.pack(pady=18)
+        make_btn(btn_row, "← Back to Menu", self.show_main_menu,
+                 color=BTN_BACK, hover=BTN_BACK_HVR, width=20).pack()
+
+    # ── Games Menu ───────────────────────────────────────────────
+
+    def show_games_menu(self):
+        self.clear_window()
+        outer = self._base_frame()
+        card  = self._centered_card(outer)
+
+        make_title_bar(card, "GAMES & ENTERTAINMENT", "🎮")
+
+        body = tk.Frame(card, bg=CARD, padx=30, pady=18)
+        body.pack(fill="both", expand=True)
+
+        make_label(body, "Take a break and have some fun! 🎉",
+                   fg=SUBTEXT, font=FONT_SUBTITLE).pack(pady=(0, 20))
+
+        games = [
+            ("🔢   Number Guessing Game", self.show_number_guessing, ACCENT,  BTN_HVR),
+            ("🐦   Flappy Bird",          self.play_flappy_bird,      ACCENT2, "#7C3AED"),
+            ("❓   Quiz Game",
+             lambda: webbrowser.open("http://127.0.0.1:5500/web.html"),
+             WARNING, "#D97706"),
+        ]
+        for text, cmd, col, hov in games:
+            make_btn(body, text, cmd, color=col, hover=hov,
+                     width=36, pady=12).pack(pady=6, fill="x")
+
+        make_btn(body, "← Back to Menu", self.show_main_menu,
+                 color=BTN_BACK, hover=BTN_BACK_HVR,
+                 width=36, pady=10).pack(pady=(14, 0), fill="x")
+
+    # ── Number Guessing Game ─────────────────────────────────────
+
+    def show_number_guessing(self):
+        self.clear_window()
+        outer = self._base_frame()
+        card  = self._centered_card(outer)
+
+        make_title_bar(card, "NUMBER GUESSING GAME", "🔢")
+
+        body = tk.Frame(card, bg=CARD, padx=30, pady=18)
+        body.pack(fill="both", expand=True)
+
+        make_label(body,
+            "I'm thinking of a number between 1 and 100.\nCan you guess it? 🤔",
+            font=FONT_SUBTITLE, justify="center").pack(pady=(0, 16))
+
+        number   = [random.randint(1, 100)]
+        attempts = [0]
+
+        # Stats row
+        stats = tk.Frame(body, bg=CARD)
+        stats.pack(fill="x", pady=(0, 12))
+        attempts_var  = tk.StringVar(value="Attempts:  0")
+        attempts_lbl  = tk.Label(stats, textvariable=attempts_var,
+                                 font=("Segoe UI", 11, "bold"),
+                                 bg=CARD, fg=ACCENT)
+        attempts_lbl.pack(side="left")
+
+        result_var = tk.StringVar(value="")
+        result_lbl = tk.Label(body, textvariable=result_var,
+                              font=("Segoe UI", 13, "bold"),
+                              bg=CARD, fg=WARNING)
+        result_lbl.pack(pady=8)
+
+        make_label(body, "Enter your guess:", fg=SUBTEXT,
+                   font=FONT_SMALL).pack(anchor="w")
+        guess_entry = make_entry(body)
+        guess_entry.pack(fill="x", ipady=8, pady=(4, 12))
+        guess_entry.focus()
+
+        def check():
+            try:
+                g = int(guess_entry.get())
+                attempts[0] += 1
+                attempts_var.set(f"Attempts:  {attempts[0]}")
+                if g < number[0]:
+                    result_var.set("📉  Too low — try higher!")
+                    result_lbl.config(fg=DANGER)
+                elif g > number[0]:
+                    result_var.set("📈  Too high — try lower!")
+                    result_lbl.config(fg=WARNING)
+                else:
+                    result_var.set(
+                        f"🎉  Correct! You got it in {attempts[0]} attempt(s)!")
+                    result_lbl.config(fg=SUCCESS)
+                    guess_entry.config(state="disabled")
+                    check_btn.config(state="disabled")
+                    again_btn.config(state="normal")
+                guess_entry.delete(0, tk.END)
+                guess_entry.focus()
+            except ValueError:
+                messagebox.showerror("Invalid", "Please enter a whole number.")
+                guess_entry.delete(0, tk.END)
+
+        def play_again():
+            number[0]   = random.randint(1, 100)
+            attempts[0] = 0
+            attempts_var.set("Attempts:  0")
+            result_var.set("")
+            guess_entry.config(state="normal")
+            check_btn.config(state="normal")
+            again_btn.config(state="disabled")
+            guess_entry.delete(0, tk.END)
+            guess_entry.focus()
+
+        guess_entry.bind("<Return>", lambda e: check())
+
+        btn_row = tk.Frame(body, bg=CARD)
+        btn_row.pack(fill="x", pady=6)
+        check_btn = make_btn(btn_row, "Check Guess ✔", check,
+                             color=ACCENT, hover=BTN_HVR, width=16, pady=10)
+        check_btn.pack(side="left", padx=4)
+        again_btn = make_btn(btn_row, "Play Again 🔄", play_again,
+                             color=SUCCESS, hover="#047857",
+                             width=14, pady=10)
+        again_btn.config(state="disabled")
+        again_btn.pack(side="left", padx=4)
+        make_btn(btn_row, "← Back", self.show_games_menu,
+                 color=BTN_BACK, hover=BTN_BACK_HVR,
+                 width=10, pady=10).pack(side="left", padx=4)
+
+    # ── Flappy Bird ──────────────────────────────────────────────
+
+    def play_flappy_bird(self):
+        import subprocess, os, sys
+        path = os.path.join(os.path.dirname(__file__), "flappybird.py")
+        try:
+            messagebox.showinfo(
+                "🐦 Flappy Bird",
+                "Starting Flappy Bird…\nClose the game window to return to the menu.")
+            subprocess.Popen([sys.executable, path])
+        except Exception as ex:
+            messagebox.showerror("Error", f"Could not start Flappy Bird:\n{ex}")
+
+
+# ── Entry point ──────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app  = StudentTrackerApp(root)
+    root.mainloop()

@@ -1,0 +1,734 @@
+!DOCTYPE html.txt
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Quiz Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            animation: slideDown 0.8s ease;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .menu-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            animation: fadeIn 1s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .quiz-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .quiz-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .quiz-card h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .quiz-card p {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .quiz-card .question-count {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .quiz-card button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .quiz-card button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Quiz Container */
+        .quiz-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .quiz-container.active {
+            display: block;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .quiz-title {
+            color: #667eea;
+            font-size: 1.8em;
+        }
+
+        .progress-info {
+            color: #666;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .question {
+            margin: 30px 0;
+        }
+
+        .question h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .option:hover {
+            border-color: #667eea;
+            background: #f5f5ff;
+        }
+
+        .option input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .option.selected {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #ddd;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #ccc;
+        }
+
+        /* Results */
+        .results-container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+
+        .results-container.active {
+            display: block;
+        }
+
+        .results-score {
+            font-size: 3em;
+            color: #667eea;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .results-message {
+            font-size: 1.3em;
+            color: #333;
+            margin: 20px 0;
+        }
+
+        .results-details {
+            background: #f5f5ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .results-details p {
+            margin: 10px 0;
+            color: #666;
+        }
+
+        .emoji {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+
+        .back-button {
+            margin-top: 30px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .quiz-container {
+                padding: 20px;
+            }
+
+            .menu-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Student Quiz Platform</h1>
+            <p>Test your knowledge across multiple subjects</p>
+        </header>
+
+        <!-- Menu Section -->
+        <div id="menuSection" class="menu-section">
+            <div class="quiz-card" onclick="startQuiz('math')">
+                <h2>🔢 Mathematics</h2>
+                <p>Test your math skills</p>
+                <div class="question-count">5 Questions</div>
+                <button>Start Quiz</button>
+            </div>
+
+            <div class="quiz-card" onclick="startQuiz('science')">
+                <h2>🔬 Science</h2>
+                <p>Explore scientific concepts</p>
+                <div class="question-count">5 Questions</div>
+                <button>Start Quiz</button>
+            </div>
+
+            <div class="quiz-card" onclick="startQuiz('english')">
+                <h2>📖 English</h2>
+                <p>Grammar and comprehension</p>
+                <div class="question-count">5 Questions</div>
+                <button>Start Quiz</button>
+            </div>
+
+            <div class="quiz-card" onclick="startQuiz('nepali')">
+                <h2>🏔️ Nepali</h2>
+                <p>Language and literature</p>
+                <div class="question-count">5 Questions</div>
+                <button>Start Quiz</button>
+            </div>
+
+            <div class="quiz-card" onclick="startQuiz('history')">
+                <h2>🏛️ History</h2>
+                <p>Historical events and figures</p>
+                <div class="question-count">5 Questions</div>
+                <button>Start Quiz</button>
+            </div>
+
+            <div class="quiz-card" onclick="startQuiz('computer')">
+                <h2>💻 Computer Science</h2>
+                <p>Technology and programming</p>
+                <div class="question-count">5 Questions</div>
+                <button>Start Quiz</button>
+            </div>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="quizContainer" class="quiz-container">
+            <div class="quiz-header">
+                <h2 class="quiz-title" id="quizTitle">Quiz</h2>
+                <div class="progress-info">
+                    <span id="questionNumber">1</span> / <span id="totalQuestions">5</span>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="question" id="questionContainer">
+                <!-- Questions will be inserted here -->
+            </div>
+
+            <div class="buttons">
+                <button class="btn btn-secondary" onclick="goBack()">Back</button>
+                <button class="btn btn-primary" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" class="results-container">
+            <h2>Quiz Completed! 🎉</h2>
+            <div class="emoji" id="resultEmoji"></div>
+            <div class="results-score" id="finalScore">0/5</div>
+            <div class="results-message" id="resultMessage"></div>
+            <div class="results-details">
+                <p><strong>Subject:</strong> <span id="resultSubject"></span></p>
+                <p><strong>Percentage:</strong> <span id="resultPercentage">0%</span></p>
+                <p id="resultFeedback"></p>
+            </div>
+            <button class="btn btn-primary back-button" onclick="goBack()">Try Another Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        // Quiz Data
+        const quizzes = {
+            math: {
+                title: "Mathematics Quiz",
+                questions: [
+                    {
+                        question: "What is 15 × 12?",
+                        options: ["160", "180", "190", "170"],
+                        correct: 1
+                    },
+                    {
+                        question: "What is the square root of 144?",
+                        options: ["10", "11", "12", "13"],
+                        correct: 2
+                    },
+                    {
+                        question: "What is 25% of 80?",
+                        options: ["15", "20", "25", "30"],
+                        correct: 1
+                    },
+                    {
+                        question: "Solve: 2x + 5 = 15",
+                        options: ["x = 3", "x = 4", "x = 5", "x = 6"],
+                        correct: 2
+                    },
+                    {
+                        question: "What is the area of a circle with radius 5? (Use π = 3.14)",
+                        options: ["78.5", "78", "75.5", "80"],
+                        correct: 0
+                    }
+                ]
+            },
+            science: {
+                title: "Science Quiz",
+                questions: [
+                    {
+                        question: "What is the chemical symbol for gold?",
+                        options: ["Gd", "Au", "Go", "Gl"],
+                        correct: 1
+                    },
+                    {
+                        question: "How many bones are in the human body?",
+                        options: ["186", "206", "226", "246"],
+                        correct: 1
+                    },
+                    {
+                        question: "What is the speed of light?",
+                        options: ["300,000 km/s", "150,000 km/s", "200,000 km/s", "400,000 km/s"],
+                        correct: 0
+                    },
+                    {
+                        question: "Which planet is known as the Red Planet?",
+                        options: ["Venus", "Mars", "Jupiter", "Saturn"],
+                        correct: 1
+                    },
+                    {
+                        question: "What is the process by which plants make their own food?",
+                        options: ["Respiration", "Photosynthesis", "Digestion", "Fermentation"],
+                        correct: 1
+                    }
+                ]
+            },
+            english: {
+                title: "English Quiz",
+                questions: [
+                    {
+                        question: "Which of the following is a noun?",
+                        options: ["Run", "Beautiful", "Happiness", "Quickly"],
+                        correct: 2
+                    },
+                    {
+                        question: "What is the plural of 'child'?",
+                        options: ["Childs", "Children", "Childes", "Childer"],
+                        correct: 1
+                    },
+                    {
+                        question: "Which sentence is grammatically correct?",
+                        options: ["She go to school", "She goes to school", "She going to school", "She gone to school"],
+                        correct: 1
+                    },
+                    {
+                        question: "What does 'eloquent' mean?",
+                        options: ["Quiet", "Fluent and expressive in speaking", "Arrogant", "Shy"],
+                        correct: 1
+                    },
+                    {
+                        question: "Identify the adjective in: 'The blue car is fast'",
+                        options: ["car", "blue", "fast", "both blue and fast"],
+                        correct: 3
+                    }
+                ]
+            },
+            nepali: {
+                title: "Nepali Quiz",
+                questions: [
+                    {
+                        question: "नेपालको राजधानी कहाँ हो?",
+                        options: ["काठमाडौं", "पोखरा", "बिराटनगर", "बुटवल"],
+                        correct: 0
+                    },
+                    {
+                        question: "नेपालको राष्ट्रिय पुष्प कुन हो?",
+                        options: ["गुलाब", "सूर्यफूल", "लालीगुराँस", "कमल"],
+                        correct: 2
+                    },
+                    {
+                        question: "नेपाली वर्णमालामा कति व्यञ्जन छ?",
+                        options: ["३६", "३७", "३८", "३९"],
+                        correct: 0
+                    },
+                    {
+                        question: "नेपालको राष्ट्रिय खेल कुन हो?",
+                        options: ["फुटबल", "क्रिकेट", "भलिबल", "दण्डा"],
+                        correct: 2
+                    },
+                    {
+                        question: "'पर्वत' शब्दको पर्यायवाची शब्द कुन हो?",
+                        options: ["नदी", "गिरि", "वन", "गाउँ"],
+                        correct: 1
+                    }
+                ]
+            },
+            history: {
+                title: "History Quiz",
+                questions: [
+                    {
+                        question: "In which year did Nepal become a democratic republic?",
+                        options: ["2006", "2007", "2008", "2009"],
+                        correct: 2
+                    },
+                    {
+                        question: "Who was the elected first Prime Minister of Nepal?",
+                        options: ["B.P. Koirala", "Girija Prasad Koirala", "Jnanendra Lal Malla", "Matrika Prasad Koirala"],
+                        correct: 3
+                    },
+                    {
+                        question: "What was the ancient name of Nepal?",
+                        options: ["Bharat", "Himalaya", "Khemadipta", "Gandharva"],
+                        correct: 2
+                    },
+                    {
+                        question: "In which year did Nepal adopt a new constitution?",
+                        options: ["2013", "2014", "2015", "2016"],
+                        correct: 2
+                    },
+                    {
+                        question: "Who unified Nepal?",
+                        options: ["Prithvi Narayan Shah", "Amar Singh Thapa", "Tribhuvan", "Mahendra"],
+                        correct: 0
+                    }
+                ]
+            },
+                 computer: {
+                title: "Computer Science",
+                questions: [
+                    {
+                        question: "Which of the following is the brain of the computer?",
+                        options: ["CPU", "RAM", "ROM", "MOTHERBOARD"],
+                        correct: 0
+                    },
+                    {
+                        question: "What does CPU stand for?",
+                        options: ["Central Processing Unit", "Central Program Unit", "Computer Personal Unit", "Central Processor Utility"],
+                        correct: 0
+                    },
+                    {
+                        question: "Which device is used to convert digital signals into analog signals for communication?",
+                        options: [" Router", "Modern", "Switch", "Hub"],
+                        correct: 1
+
+                    },
+                    {
+                        question: "Which number system is used by computers internally?",
+                        options: ["Binary", "Decimal", "Hexadecimal", "Octal"],
+                        correct: 0
+
+                    },
+                    {
+                        question: "What is Python mainly used for?",
+                        options: ["Web Design", "Game Development", "General Purpose Programming", "System Administration"],
+                        correct: 2
+                    }
+                ]
+            }
+        };
+
+        let currentQuiz = null;
+        let currentQuestion = 0;
+        let answers = [];
+
+        function startQuiz(subject) {
+            currentQuiz = quizzes[subject];
+            currentQuestion = 0;
+            answers = new Array(currentQuiz.questions.length).fill(null);
+            
+            document.getElementById('menuSection').style.display = 'none';
+            document.getElementById('quizContainer').style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'none';
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const question = currentQuiz.questions[currentQuestion];
+            
+            document.getElementById('quizTitle').textContent = currentQuiz.title;
+            document.getElementById('questionNumber').textContent = currentQuestion + 1;
+            document.getElementById('totalQuestions').textContent = currentQuiz.questions.length;
+            
+            const percentage = ((currentQuestion + 1) / currentQuiz.questions.length) * 100;
+            document.getElementById('progressFill').style.width = percentage + '%';
+            
+            let html = `
+                <h3>Q${currentQuestion + 1}: ${question.question}</h3>
+                <div class="options">
+            `;
+            
+            question.options.forEach((option, index) => {
+                const checked = answers[currentQuestion] === index ? 'checked' : '';
+                const selected = answers[currentQuestion] === index ? 'selected' : '';
+                html += `
+                    <label class="option ${selected}">
+                        <input type="radio" name="answer" value="${index}" ${checked} onchange="selectAnswer(${index})">
+                        ${option}
+                    </label>
+                `;
+            });
+            
+            html += `</div>`;
+            document.getElementById('questionContainer').innerHTML = html;
+            
+            // Update button text
+            const nextBtn = document.querySelector('.btn-primary');
+            if (currentQuestion === currentQuiz.questions.length - 1) {
+                nextBtn.textContent = 'Submit Quiz';
+            } else {
+                nextBtn.textContent = 'Next';
+            }
+        }
+
+        function selectAnswer(index) {
+            answers[currentQuestion] = index;
+            const options = document.querySelectorAll('.option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            options[index].classList.add('selected');
+        }
+
+        function nextQuestion() {
+            if (answers[currentQuestion] === null) {
+                alert('Please select an answer before proceeding!');
+                return;
+            }
+            
+            if (currentQuestion < currentQuiz.questions.length - 1) {
+                currentQuestion++;
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            let score = 0;
+            currentQuiz.questions.forEach((question, index) => {
+                if (answers[index] === question.correct) {
+                    score++;
+                }
+            });
+            
+            const total = currentQuiz.questions.length;
+            const percentage = (score / total) * 100;
+            
+            document.getElementById('quizContainer').style.display = 'none';
+            document.getElementById('resultsContainer').style.display = 'block';
+            
+            document.getElementById('finalScore').textContent = `${score}/${total}`;
+            document.getElementById('resultSubject').textContent = currentQuiz.title;
+            document.getElementById('resultPercentage').textContent = percentage.toFixed(1) + '%';
+            
+            let message, emoji, feedback;
+            
+            if (percentage === 100) {
+                message = 'Perfect Score! Outstanding performance! 🌟';
+                emoji = '⭐';
+                feedback = 'You have mastered this subject! Keep up the excellent work!';
+            } else if (percentage >= 80) {
+                message = 'Excellent! Great job! 🎉';
+                emoji = '🎊';
+                feedback = 'You have a strong understanding of the material. Well done!';
+            } else if (percentage >= 60) {
+                message = 'Good! You passed the quiz! 👏';
+                emoji = '✅';
+                feedback = 'You did well but there\'s room for improvement. Keep studying!';
+            } else if (percentage >= 40) {
+                message = 'Not bad! Keep practicing! 💪';
+                emoji = '📚';
+                feedback = 'You need to review the material and practice more to improve.';
+            } else {
+                message = 'Keep trying! You\'ll do better next time! 🚀';
+                emoji = '📖';
+                feedback = 'Review the concepts and take the quiz again. Consistency is key to success!';
+            }
+            
+            document.getElementById('resultMessage').textContent = message;
+            document.getElementById('resultEmoji').textContent = emoji;
+            document.getElementById('resultFeedback').textContent = feedback;
+        }
+
+        function goBack() {
+            document.getElementById('menuSection').style.display = 'grid';
+            document.getElementById('quizContainer').style.display = 'none';
+            document.getElementById('resultsContainer').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
